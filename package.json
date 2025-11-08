@@ -18,7 +18,8 @@
     "react-paginate": "^8.3.0",
     "react-query": "^3.39.3",
     "use-debounce": "^10.0.6",
-    "yup": "^1.7.1"
+    "yup": "^1.7.1",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

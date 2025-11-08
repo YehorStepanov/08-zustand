@@ -4,11 +4,24 @@ import { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useNoteStore } from "@/lib/store/noteStore";
 import css from "./NoteForm.module.css";
-import { createNote } from "@/lib/api"; 
+import { createNote } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function NoteForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { draft, setDraft, clearDraft } = useNoteStore();
+  const { mutate, isPending } = useMutation({
+    mutationFn: () => createNote(draft),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      clearDraft();
+      router.back();
+    },
+    onError: (error) => {
+      console.error("Failed to create note:", error);
+    },
+  });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -17,15 +30,9 @@ export default function NoteForm() {
     setDraft({ [name]: value });
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
-      await createNote(draft); 
-      clearDraft();
-      router.back(); 
-    } catch (error) {
-      console.error("Failed to create note:", error);
-    }
+    mutate();
   };
 
   const handleCancel = () => {
@@ -46,6 +53,7 @@ export default function NoteForm() {
           required
         />
       </div>
+
       <div className={css.formGroup}>
         <label htmlFor="content">Content</label>
         <textarea
@@ -58,6 +66,7 @@ export default function NoteForm() {
           required
         />
       </div>
+
       <div className={css.formGroup}>
         <label htmlFor="tag">Tag</label>
         <select
@@ -71,15 +80,17 @@ export default function NoteForm() {
           <option value="Work">Work</option>
           <option value="Personal">Personal</option>
           <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
         </select>
       </div>
+
       <div className={css.actions}>
         <button
           type="submit"
           className={css.submitButton}
-          disabled={!draft.title || !draft.content}
+          disabled={!draft.title || !draft.content || isPending}
         >
-          Save note
+          {isPending ? "Saving..." : "Save note"}
         </button>
 
         <button
